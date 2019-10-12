@@ -12,7 +12,7 @@ alias mTwitch.Localization {
     }
     return $false
   }
-  
+
   if (!$0) {
     echo -a [mTwitch] Display Name localization is $group(#mTwitch.DisplayName.Localization)
   }
@@ -32,12 +32,11 @@ alias mTwitch.Localization {
 
 on *:CONNECT:{
   if ($mTwitch.isServer) {
-    JSONOpen -uw mTwitch_NameFix https://api.twitch.tv/kraken/users?login= $+ $mTwitch.UrlEncode($me)
+    JSONOpen -uw mTwitch_NameFix https://api.twitch.tv/helix/users?login= $+ $mTwitch.UrlEncode($me)
     JSONHttpHeader mTwitch_NameFix Client-ID e8e68mu4x2sxsewuw6w82wpfuyprrdx
-    JSONHttpHeader mTwitch_NameFix Accept application/vnd.twitchtv.v5+json
     JSONHttpFetch mTwitch_NameFix
     if (!$JSONError) {
-      var %dnick = $remove($JSON(mTwitch_NameFix, users, 0, display_name).value, $chr(32), $cr, $lf)
+      var %dnick = $remove($JSON(mTwitch_NameFix, data, 0, display_name).value, $chr(32), $cr, $lf)
       if ($mTwitch.localization || !$regex(%dnick, [\x80-\xFF])) && (%dnick !== $null && %dnick !=== $me) {
         .parseline -iqt $+(:, $me, !, $me, @, $me, .tmi.twitch.tv) NICK $+(:, %dnick)
       }

@@ -64,14 +64,14 @@ alias mTwitch.StateToTopic {
         var %Chan = $lower($chan(%ChanIndex))
         if ($me ison %chan && !$hget(%Table, %Chan)) {
           hadd %table %Chan -
-          %Streams = $addtok(%Streams, $mTwitch.UrlEncode($lower($iif(#* iswm %Chan, $mid(%Chan, 2-), %Chan))), 44)
-          if ($len(%Streams) >= 2500 || (%ConnIndex == %ConnLength && %ChanIndex == %ChanLength) || !$calc($numtok(%Streams, 44) % 100)) {
-            JSONOpen -uw mTwitch.StateToTopic https://api.twitch.tv/kraken/streams?limit=100&channel= $+ %Streams
+          %Streams = $addtok(%Streams, $+(user_login=,$mTwitch.UrlEncode($lower($iif(#* iswm %Chan, $mid(%Chan, 2-), %Chan)))), 38)
+          if ($len(%Streams) >= 2500 || (%ConnIndex == %ConnLength && %ChanIndex == %ChanLength) || !$calc($numtok(%Streams, 38) % 100)) {
+            JSONOpen -uw mTwitch.StateToTopic https://api.twitch.tv/helix/streams? $+ %Streams
             JSONHttpHeader mTwitch.StateToTopic Client-ID e8e68mu4x2sxsewuw6w82wpfuyprrdx
             JSONHttpFetch  mTwitch.StateToTopic
             %Streams = $null
             if (!$JSONError && $JSON(mTwitch.StateToTopic).HttpStatus == 200) {
-              noop $JSONForEach($JSON(mTwitch.StateToTopic, streams), mTwitch.StateToTopic.UpdateStreamState)
+              noop $JSONForEach($JSON(mTwitch.StateToTopic, data), mTwitch.StateToTopic.UpdateStreamState)
             }
             JSONClose mTwitch.StateToTopic
           }
@@ -84,14 +84,23 @@ alias mTwitch.StateToTopic {
 }
 
 alias mTwitch.StateToTopic.UpdateStreamState {
-  var %chan = $chr(35) $+ $JSON($1, channel, name).value
+  var %chan = $chr(35) $+ $JSON($1, $lower(user_name)).value
   var %online = $hget(mTwitch.StreamState, %chan $+ . $+ StreamOnline)
   var %hadd = hadd -m mTwitch.StreamState %chan $+ .
   %hadd $+ StreamOnline $true
-  %hadd $+ StreamStart $mTwitch.ConvertTime($JSON($1, created_at).value)
-  %hadd $+ StreamGame $JSON($1, game).value
-  %hadd $+ StreamTitle $JSON($1, channel, status).value
-  %hadd $+ StreamIsMature $JSON($1, channel, mature).value
+  %hadd $+ StreamStart $mTwitch.ConvertTime($JSON($1, started_at).value)
+  JSONOpen -uw mTwitch.GameName https://api.twitch.tv/helix/games?id= $+ $JSON($1, game_id).value
+  JSONHttpHeader mTwitch.GameName Client-ID e8e68mu4x2sxsewuw6w82wpfuyprrdx
+  JSONHttpFetch mTwitch.GameName
+  if (!$JSONError && $JSON(mTwitch.StateToTopic).HttpStatus == 200) { 
+    %hadd $+ StreamGame $JSON(mTwitch.GameName, data, 0, name).value
+  }
+  else {
+    %hadd $+ StreamGame ERROR!
+  }
+  JSONClose mTwitch.GameName
+  %hadd $+ StreamTitle $JSON($1, title).value
+  ;%hadd $+ StreamIsMature $JSON($1, mature).value
   if (!%Online) {
     .signal mTwitch.StreamOnline $mid(%chan, 2-)
   }
