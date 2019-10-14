@@ -135,7 +135,7 @@ alias -l mTwitch.StateToTopic.Set {
 
     ;; Online/Offline status
     if (%State == Online) {
-      %Topic = $+($chr(3), 12Online since $chr(15), $asctime(%Start, ddd mm HH:nn))
+      %Topic = $+($chr(3), 12Online since $chr(15), $asctime(%Start, ddd d mmm HH:nn))
     }
     else {
       %Topic = $+($chr(3), 04Offline, $chr(15))
