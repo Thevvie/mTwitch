@@ -109,7 +109,7 @@ alias mTwitch.StateToTopic.UpdateStreamState {
 alias -l mTwitch.StateToTopic.Set {
   var %item = $lower(#$1), %Table = mTwitch.StreamState, %State, %Game, %Title, %Mature, %Start, %FolOnly, %SubOnly, %Slow, %R9K, %Topic
   if (!$hfind(%Table, %item $+ .*, 1, w)) {
-    %Topic = 04Offline
+    %Topic = $chr(3) $+ 04Offline $+ $chr(15)
   }
   else {
     if ($hget(mTwitch.StateToTopic, %item) == -) {
